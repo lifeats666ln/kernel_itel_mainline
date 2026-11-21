@@ -242,6 +242,7 @@ static int mt6779_keypad_pdrv_probe(struct platform_device *pdev)
 static const struct of_device_id mt6779_keypad_of_match[] = {
 	{ .compatible = "mediatek,mt6779-keypad" },
 	{ .compatible = "mediatek,mt6873-keypad" },
+	{ .compatible = "mediatek,mt6789-keypad" },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, mt6779_keypad_of_match);
