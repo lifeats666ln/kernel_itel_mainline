@@ -303,6 +303,15 @@ config COMMON_CLK_MT6779_AUDSYS
 	help
 	  This driver supports Mediatek MT6779 audsys clocks.
 
+config COMMON_CLK_MT6789
+	tristate "Clock driver for MediaTek MT6789"
+	depends on ARCH_MEDIATEK || COMPILE_TEST
+	select COMMON_CLK_MEDIATEK
+	default ARCH_MEDIATEK
+	help
+	  This driver supports MediaTek MT6789 apmixedsys, topckgen and
+	  infracfg_ao clocks.
+
 config COMMON_CLK_MT6795
 	tristate "Clock driver for MediaTek MT6795"
 	depends on ARCH_MEDIATEK || COMPILE_TEST

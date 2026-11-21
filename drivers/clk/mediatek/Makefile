@@ -23,6 +23,9 @@ obj-$(CONFIG_COMMON_CLK_MT6779_VDECSYS) += clk-mt6779-vdec.o
 obj-$(CONFIG_COMMON_CLK_MT6779_VENCSYS) += clk-mt6779-venc.o
 obj-$(CONFIG_COMMON_CLK_MT6779_MFGCFG) += clk-mt6779-mfg.o
 obj-$(CONFIG_COMMON_CLK_MT6779_AUDSYS) += clk-mt6779-aud.o
+obj-$(CONFIG_COMMON_CLK_MT6789) += clk-mt6789-apmixedsys.o clk-mt6789-topckgen.o \
+				   clk-mt6789-infra_ao.o clk-mt6789-imp_iic_wrap.o \
+				   clk-mt6789-mm.o
 obj-$(CONFIG_COMMON_CLK_MT6795) += clk-mt6795-apmixedsys.o clk-mt6795-infracfg.o \
 				   clk-mt6795-pericfg.o clk-mt6795-topckgen.o
 obj-$(CONFIG_COMMON_CLK_MT6795_MFGCFG) += clk-mt6795-mfg.o
