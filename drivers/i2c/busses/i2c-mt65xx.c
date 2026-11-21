@@ -527,6 +527,7 @@ static const struct of_device_id mtk_i2c_of_match[] = {
 	{ .compatible = "mediatek,mt2712-i2c", .data = &mt2712_compat },
 	{ .compatible = "mediatek,mt6577-i2c", .data = &mt6577_compat },
 	{ .compatible = "mediatek,mt6589-i2c", .data = &mt6589_compat },
+	{ .compatible = "mediatek,mt6789-i2c", .data = &mt8188_compat },
 	{ .compatible = "mediatek,mt7622-i2c", .data = &mt7622_compat },
 	{ .compatible = "mediatek,mt7981-i2c", .data = &mt7981_compat },
 	{ .compatible = "mediatek,mt7986-i2c", .data = &mt7986_compat },
@@ -1222,7 +1223,16 @@ static int mtk_i2c_do_transfer(struct mtk_i2c *i2c, struct i2c_msg *msgs,
 	}
 
 	if (ret == 0) {
-		dev_dbg(i2c->dev, "addr: %x, transfer timeout\n", msgs->addr);
+		dev_err(i2c->dev,
+			"addr: 0x%x timeout (SLAVE=0x%x STAT=0x%x CTRL=0x%x DBG=0x%x/%x DMA_EN=0x%x CON=0x%x 4G=0x%x)\n",
+			msgs->addr, mtk_i2c_readw(i2c, OFFSET_SLAVE_ADDR),
+			mtk_i2c_readw(i2c, OFFSET_INTR_STAT),
+			mtk_i2c_readw(i2c, OFFSET_CONTROL),
+			mtk_i2c_readw(i2c, OFFSET_DEBUGSTAT),
+			mtk_i2c_readw(i2c, OFFSET_DEBUGCTRL),
+			readl(i2c->pdmabase + OFFSET_EN),
+			readl(i2c->pdmabase + OFFSET_CON),
+			readl(i2c->pdmabase + OFFSET_TX_4G_MODE));
 		i2c_dump_register(i2c);
 		mtk_i2c_init_hw(i2c);
 		return -ETIMEDOUT;

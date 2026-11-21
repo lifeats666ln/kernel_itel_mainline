@@ -376,7 +376,17 @@ static int lvts_get_temp(struct thermal_zone_device *tz, int *temp)
 	if (rc)
 		return -EAGAIN;
 
+	if (!(value & 0xFFFF))
+		return -EAGAIN;
+
 	*temp = lvts_raw_to_temp(value, lvts_data);
+
+	/*
+	 * Guard against anomalous or uninitialized readings triggering
+	 * early hardware protection shutdown during boot.
+	 */
+	if (*temp < -20000 || *temp > 115000)
+		return -EAGAIN;
 
 	return 0;
 }
@@ -1298,6 +1308,23 @@ static int lvts_ctrl_start(struct device *dev, struct lvts_ctrl *lvts_ctrl)
 	u32 *sensor_bitmap = lvts_ctrl->mode == LVTS_MSR_IMMEDIATE_MODE ?
 			     sensor_imm_bitmap : sensor_filt_bitmap;
 
+	lvts_for_each_valid_sensor(i, lvts_ctrl)
+		sensor_map |= sensor_bitmap[i];
+
+	/*
+	 * Enable temperature monitoring in the hardware controller BEFORE
+	 * registering the thermal zones so valid measurements are actively
+	 * acquired and available when the thermal framework performs the
+	 * initial reading during zone registration.
+	 */
+	if (lvts_ctrl->mode == LVTS_MSR_IMMEDIATE_MODE)
+		writel(sensor_map, LVTS_MSRCTL1(lvts_ctrl->base));
+	else
+		writel(sensor_map | BIT(9), LVTS_MONCTL0(lvts_ctrl->base));
+
+	/* Wait 2ms for hardware to complete initial sampling round */
+	usleep_range(2000, 3000);
+
 	lvts_for_each_valid_sensor(i, lvts_ctrl) {
 
 		int dt_id = lvts_sensors[i].dt_id;
@@ -1327,44 +1354,6 @@ static int lvts_ctrl_start(struct device *dev, struct lvts_ctrl *lvts_ctrl)
 		 * belonging to the thermal domain.
 		 */
 		lvts_sensors[i].tz = tz;
-
-		/*
-		 * This sensor was correctly associated with a thermal
-		 * zone, let's set the corresponding bit in the sensor
-		 * map, so we can enable the temperature monitoring in
-		 * the hardware thermal controller.
-		 */
-		sensor_map |= sensor_bitmap[i];
-	}
-
-	/*
-	 * The initialization of the thermal zones give us
-	 * which sensor point to enable. If any thermal zone
-	 * was not described in the device tree, it won't be
-	 * enabled here in the sensor map.
-	 */
-	if (lvts_ctrl->mode == LVTS_MSR_IMMEDIATE_MODE) {
-		/*
-		 * LVTS_MSRCTL1 : Measurement control
-		 *
-		 * Bits:
-		 *
-		 * 9: Ignore MSRCTL0 config and do immediate measurement on sensor3
-		 * 6: Ignore MSRCTL0 config and do immediate measurement on sensor2
-		 * 5: Ignore MSRCTL0 config and do immediate measurement on sensor1
-		 * 4: Ignore MSRCTL0 config and do immediate measurement on sensor0
-		 *
-		 * That configuration will ignore the filtering and the delays
-		 * introduced in MONCTL1 and MONCTL2
-		 */
-		writel(sensor_map, LVTS_MSRCTL1(lvts_ctrl->base));
-	} else {
-		/*
-		 * Bits:
-		 *      9: Single point access flow
-		 *    0-3: Enable sensing point 0-3
-		 */
-		writel(sensor_map | BIT(9), LVTS_MONCTL0(lvts_ctrl->base));
 	}
 
 	return 0;
@@ -1644,6 +1633,63 @@ static const u32 mt7988_init_cmds[] = {
  *
  * Hence the rather confusing offsets provided below.
  */
+static const struct lvts_ctrl_data mt6789_lvts_data_ctrl[] = {
+	{
+		.lvts_sensor = {
+			{ .dt_id = MT6789_LITTLE_CPU0,
+			  .cal_offsets = { 4, 5 } },
+			{ .dt_id = MT6789_LITTLE_CPU1,
+			  .cal_offsets = { 6, 7 } },
+			{ .dt_id = MT6789_LITTLE_CPU2,
+			  .cal_offsets = { 8, 9 } },
+			{ .dt_id = MT6789_LITTLE_CPU3,
+			  .cal_offsets = { 10, 11 } }
+		},
+		VALID_SENSOR_MAP(1, 1, 1, 1),
+		.offset = 0x0,
+		.mode = LVTS_MSR_FILTERED_MODE,
+	},
+	{
+		.lvts_sensor = {
+			{ .dt_id = MT6789_BIG_CPU0,
+			  .cal_offsets = { 12, 13 } },
+			{ .dt_id = MT6789_BIG_CPU1,
+			  .cal_offsets = { 14, 15 } },
+			{ .dt_id = MT6789_BIG_CPU2,
+			  .cal_offsets = { 16, 17 } },
+			{ .dt_id = MT6789_BIG_CPU3,
+			  .cal_offsets = { 18, 19 } }
+		},
+		VALID_SENSOR_MAP(1, 1, 1, 1),
+		.offset = 0x100,
+		.mode = LVTS_MSR_FILTERED_MODE,
+	},
+	{
+		.lvts_sensor = {
+			{ .dt_id = MT6789_GPU0,
+			  .cal_offsets = { 20, 21 } },
+			{ .dt_id = MT6789_GPU1,
+			  .cal_offsets = { 22, 23 } },
+			{ .dt_id = MT6789_SOC0,
+			  .cal_offsets = { 24, 25 } },
+			{ .dt_id = MT6789_SOC1,
+			  .cal_offsets = { 26, 27 } }
+		},
+		VALID_SENSOR_MAP(1, 1, 1, 1),
+		.offset = 0x200,
+		.mode = LVTS_MSR_FILTERED_MODE,
+	},
+	{
+		.lvts_sensor = {
+			{ .dt_id = MT6789_MD,
+			  .cal_offsets = { 28, 29 } }
+		},
+		VALID_SENSOR_MAP(1, 0, 0, 0),
+		.offset = 0x300,
+		.mode = LVTS_MSR_FILTERED_MODE,
+	}
+};
+
 static const struct lvts_ctrl_data mt8186_lvts_data_ctrl[] = {
 	{
 		.lvts_sensor = {
@@ -2055,6 +2101,21 @@ static const struct lvts_data mt7988_lvts_ap_data = {
 	.ops = &lvts_platform_ops_mt7988,
 };
 
+static const struct lvts_data mt6789_lvts_data = {
+	.lvts_ctrl	= mt6789_lvts_data_ctrl,
+	.conn_cmd	= default_conn_cmds,
+	.init_cmd	= default_init_cmds,
+	.num_lvts_ctrl	= ARRAY_SIZE(mt6789_lvts_data_ctrl),
+	.num_conn_cmd	= ARRAY_SIZE(default_conn_cmds),
+	.num_init_cmd	= ARRAY_SIZE(default_init_cmds),
+	.temp_factor	= LVTS_COEFF_A_MT8195,
+	.temp_offset	= LVTS_COEFF_B_MT8195,
+	.gt_calib_bit_offset = 24,
+	.def_calibration = 35000,
+	.num_cal_offsets = LVTS_NUM_CAL_OFFSETS_MT8196,
+	.ops = &lvts_platform_ops_mt7988,
+};
+
 static const struct lvts_data mt8186_lvts_data = {
 	.lvts_ctrl	= mt8186_lvts_data_ctrl,
 	.conn_cmd	= default_conn_cmds,
@@ -2185,6 +2246,7 @@ static const struct lvts_data mt8196_lvts_ap_data = {
 };
 
 static const struct of_device_id lvts_of_match[] = {
+	{ .compatible = "mediatek,mt6789-lvts", .data = &mt6789_lvts_data },
 	{ .compatible = "mediatek,mt7987-lvts-ap", .data = &mt7987_lvts_ap_data },
 	{ .compatible = "mediatek,mt7988-lvts-ap", .data = &mt7988_lvts_ap_data },
 	{ .compatible = "mediatek,mt8186-lvts", .data = &mt8186_lvts_data },
