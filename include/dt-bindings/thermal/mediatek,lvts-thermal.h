@@ -109,4 +109,18 @@
 #define MT8196_AP_BOT2                  6
 #define MT8196_AP_BOT3                  7
 
+#define MT6789_LITTLE_CPU0	0
+#define MT6789_LITTLE_CPU1	1
+#define MT6789_LITTLE_CPU2	2
+#define MT6789_LITTLE_CPU3	3
+#define MT6789_BIG_CPU0		4
+#define MT6789_BIG_CPU1		5
+#define MT6789_BIG_CPU2		6
+#define MT6789_BIG_CPU3		7
+#define MT6789_GPU0		8
+#define MT6789_GPU1		9
+#define MT6789_SOC0		10
+#define MT6789_SOC1		11
+#define MT6789_MD		12
+
 #endif /* __MEDIATEK_LVTS_DT_H */

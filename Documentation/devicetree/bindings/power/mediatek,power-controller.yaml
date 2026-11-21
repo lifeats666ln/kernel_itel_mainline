@@ -24,6 +24,7 @@ properties:
   compatible:
     enum:
       - mediatek,mt6735-power-controller
+      - mediatek,mt6789-power-controller
       - mediatek,mt6795-power-controller
       - mediatek,mt6858-power-controller
       - mediatek,mt6893-power-controller

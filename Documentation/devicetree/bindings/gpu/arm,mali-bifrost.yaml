@@ -21,6 +21,7 @@ properties:
               - amlogic,meson-g12a-mali
               - mediatek,mt8183-mali
               - mediatek,mt8183b-mali
+              - mediatek,mt6789-mali
               - mediatek,mt8186-mali
               - mediatek,mt8365-mali
               - realtek,rtd1619-mali
@@ -232,6 +233,7 @@ allOf:
         compatible:
           contains:
             enum:
+              - mediatek,mt6789-mali
               - mediatek,mt8186-mali
               - mediatek,mt8370-mali
     then:
