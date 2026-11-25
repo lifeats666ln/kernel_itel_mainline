@@ -1087,6 +1087,19 @@ static const int mt8183_regs[] = {
 	[PWRAP_WACS2_VLDCLR] =			0xC28,
 };
 
+static const int mt6789_regs[] = {
+	[PWRAP_INIT_DONE2] =		0x0,
+	[PWRAP_TIMER_EN] =		0x3E4,
+	[PWRAP_INT_EN] =		0x450,
+	[PWRAP_INT_FLG] =		0x458,
+	[PWRAP_INT_CLR] =		0x45C,
+	[PWRAP_WACS2_CMD] =		0x880,
+	[PWRAP_SWINF_2_WDATA_31_0] =	0x884,
+	[PWRAP_SWINF_2_RDATA_31_0] =	0x894,
+	[PWRAP_WACS2_VLDCLR] =		0x8A4,
+	[PWRAP_WACS2_RDATA] =		0x8A8,
+};
+
 static const int mt8195_regs[] = {
 	[PWRAP_INIT_DONE2] =		0x0,
 	[PWRAP_STAUPD_CTRL] =		0x4C,
@@ -2305,7 +2318,7 @@ static const struct pmic_wrapper_type pwrap_mt6779 = {
 };
 
 static const struct pmic_wrapper_type pwrap_mt6789 = {
-	.regs = mt8195_regs,
+	.regs = mt6789_regs,
 	.type = PWRAP_MT6789,
 	.arb_en_all = 0x777f,
 	.int_en_all = 0x180000,
