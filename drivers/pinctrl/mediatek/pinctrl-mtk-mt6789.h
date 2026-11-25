@@ -15,7 +15,7 @@
 		.number = _number,			\
 		.name = _name,				\
 		.eint = _eint,				\
-		.drv_n = 0,				\
+		.drv_n = DRV_GRP4,			\
 		.funcs = (struct mtk_func_desc[]){	\
 			__VA_ARGS__, { } },		\
 	}
