@@ -111,15 +111,19 @@
 
 #define U3P_U2PHYDTM1		0x06C
 #define P2C_RG_UART_EN			BIT(16)
+#define P2C_FORCE_IDPULLUP	BIT(8)
 #define P2C_FORCE_IDDIG		BIT(9)
 #define P2C_FORCE_AVALID	BIT(10)
+#define P2C_FORCE_BVALID	BIT(11)
 #define P2C_FORCE_SESSEND	BIT(12)
 #define P2C_FORCE_VBUSVALID	BIT(13)
 
 #define P2C_RG_VBUSVALID		BIT(5)
 #define P2C_RG_SESSEND			BIT(4)
+#define P2C_RG_BVALID			BIT(3)
 #define P2C_RG_AVALID			BIT(2)
 #define P2C_RG_IDDIG			BIT(1)
+#define P2C_RG_IDPULLUP			BIT(0)
 
 #define U3P_U2PHYBC12C		0x080
 #define P2C_RG_CHGDT_EN		BIT(0)
@@ -878,7 +882,8 @@ static void u2_phy_instance_power_on(struct mtk_tphy *tphy,
 	/* OTG Enable */
 	mtk_phy_set_bits(com + U3P_USBPHYACR6, PA6_RG_U2_OTG_VBUSCMP_EN);
 
-	mtk_phy_set_bits(com + U3P_U2PHYDTM1, P2C_RG_VBUSVALID | P2C_RG_AVALID);
+	mtk_phy_set_bits(com + U3P_U2PHYDTM1, P2C_RG_VBUSVALID | P2C_RG_AVALID |
+			 P2C_RG_BVALID | P2C_RG_IDPULLUP);
 
 	mtk_phy_clear_bits(com + U3P_U2PHYDTM1, P2C_RG_SESSEND);
 
@@ -888,7 +893,8 @@ static void u2_phy_instance_power_on(struct mtk_tphy *tphy,
 		mtk_phy_set_bits(com + U3P_U2PHYDTM0, P2C_RG_SUSPENDM | P2C_FORCE_SUSPENDM);
 	}
 
-	mtk_phy_set_bits(com + U3P_U2PHYDTM1, P2C_FORCE_AVALID | P2C_FORCE_VBUSVALID | P2C_FORCE_SESSEND);
+	mtk_phy_set_bits(com + U3P_U2PHYDTM1, P2C_FORCE_AVALID | P2C_FORCE_VBUSVALID |
+			 P2C_FORCE_SESSEND | P2C_FORCE_BVALID | P2C_FORCE_IDPULLUP);
 
 	dev_dbg(tphy->dev, "%s(%d)\n", __func__, index);
 }
@@ -903,7 +909,8 @@ static void u2_phy_instance_power_off(struct mtk_tphy *tphy,
 	/* OTG Disable */
 	mtk_phy_clear_bits(com + U3P_USBPHYACR6, PA6_RG_U2_OTG_VBUSCMP_EN);
 
-	mtk_phy_clear_bits(com + U3P_U2PHYDTM1, P2C_RG_VBUSVALID | P2C_RG_AVALID);
+	mtk_phy_clear_bits(com + U3P_U2PHYDTM1, P2C_RG_VBUSVALID | P2C_RG_AVALID |
+			   P2C_RG_BVALID);
 
 	mtk_phy_set_bits(com + U3P_U2PHYDTM1, P2C_RG_SESSEND);
 
